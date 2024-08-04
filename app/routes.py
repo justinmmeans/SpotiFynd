@@ -1,10 +1,117 @@
 from app import app
-from flask import render_template
+from flask import render_template, redirect, request, session, url_for, jsonify
+import requests
+import base64
+import urllib
+from dotenv import load_dotenv
+import os
+from suggest import generate_user_tracks
+from create_playlist import create_playlist
+
+load_dotenv()
+
+CLIENT_ID = os.getenv("CLIENT_ID")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 @app.route('/')
 def home(): #corresponds to home.html in templates
     return render_template('home.html')
 
-@app.route('/index')
-def index():
-    return "Hello, World!"
+@app.route('/discover')
+def discover():
+    return render_template("discover.html")
+
+@app.route('/library')
+def library():
+    return render_template("library.html")
+
+@app.route('/login')
+def login():
+    
+    auth_url = "https://accounts.spotify.com/authorize"
+
+    # Ask for the necessary permissions - modify these as needed
+    scope = "user-library-read user-top-read playlist-modify-public"
+
+    # Construct the URL to redirect the user to
+    auth_query_parameters = {
+        "response_type": "code",
+        "redirect_uri": REDIRECT_URI,
+        "scope": scope,
+        # This ensures that the user sees the authorization prompt even if they've already authorized your app
+        "show_dialog": True,
+        "client_id": CLIENT_ID
+    }
+
+    url_args = "&".join(["{}={}".format(key, urllib.parse.quote(str(val))) for key, val in auth_query_parameters.items()])
+    auth_url = "{}/?{}".format(auth_url, url_args)
+
+    
+    return redirect(auth_url)
+
+# This is the route that Spotify will redirect to after the user logs in
+@app.route('/callback')
+def callback():
+    # Get the authorization code that Spotify returned
+    auth_token = request.args['code']
+
+    # Request an access token using the authorization code
+    code_payload = {
+        "grant_type": "authorization_code",
+        "code": str(auth_token),
+        "redirect_uri": REDIRECT_URI
+    }
+    base64encoded = base64.b64encode("{}:{}".format(CLIENT_ID, CLIENT_SECRET).encode())
+    headers = {"Authorization": "Basic {}".format(base64encoded.decode())}
+    post_request = requests.post("https://accounts.spotify.com/api/token", data=code_payload, headers=headers)
+
+    # Get the access token from the response
+    response_data = post_request.json()
+    access_token = response_data["access_token"]
+
+    # Save the access token in the user's session for later use
+    session['access_token'] = access_token
+
+    # Retrieve the Spotify username and profile picture
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+    data = response.json()
+    spotify_username = data['display_name']
+    session['spotify_username'] = spotify_username
+
+    if data['images']:
+        spotify_profile_picture = data['images'][0]['url']
+        session['spotify_profile_picture'] = spotify_profile_picture
+
+    # Redirect the user to the most recent page or the home page if no recent page is found
+    next_url = session.get('next_url', url_for('home'))
+    return redirect(next_url)
+
+@app.route('/generate_tracks', methods=['POST'])
+def generate_tracks():
+    # Get the access token from the request data
+    access_token = request.json.get('access_token')
+    if not access_token:
+        return jsonify({'error': 'No access token provided'}), 400
+
+    # Call the function with the access token
+    tracks = generate_user_tracks(access_token)
+
+    # Return the tracks as JSON
+    return jsonify(tracks)
+
+@app.route('/create_playlist', methods=['POST'])
+def create_playlist_route():
+    # Get the access token, playlist name, and tracks from the request data
+    access_token = request.json.get('access_token')
+    playlist_name = request.json.get('playlist_name')
+    tracks = request.json.get('tracks')
+    if not access_token or not playlist_name or not tracks:
+        return jsonify({'error': 'No access token, playlist name, or tracks provided'}), 400
+
+    # Call the function with the access token, playlist name, and tracks
+    create_playlist(access_token, playlist_name, tracks)
+
+    # Return a success message
+    return jsonify({'message': 'Playlist created successfully'})
