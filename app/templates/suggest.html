@@ -1,0 +1,423 @@
+{% extends "discover.html" %}
+
+{% block content %}
+    <style>
+        .button-style 
+        {
+            margin-top: 10px; /* Reduced from 20px to 10px */
+            margin-bottom: 10px;
+            margin-left: 20px; 
+            padding: 10px 20px; 
+            font-size: 1.2em; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+        }
+
+        #createPlaylistButton 
+        {
+            float: right;
+            margin-right: 20px; /* Add some margin to the right side */
+        }
+
+        .modal 
+        {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 100px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+          
+        .modal-content 
+        {
+            background-color: #333; /* Dark grey */
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+          
+        .modal-header 
+        {
+            padding: 2px 16px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            text-align: center;
+        }
+
+        .modal-content p 
+        {
+            color: white; /* Change this to any color you want */
+        }
+          
+        .close 
+        {
+            color: #aaaaaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+          
+        .close:hover,
+        close:focus 
+        {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .confirm-button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+    </style>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="close">&times;</span>
+            <h2>Select a Playlist</h2>
+          </div>
+          <div class="playlist-container">
+            <!-- The playlists will be added here -->
+          </div>
+          <button class="confirm-button" style="display: none;">Confirm</button>
+        </div>
+      </div>
+    <div class="main-area">
+        <button id="selectPlaylistButton" class="button-style">Select Playlist</button>
+        <button id="createPlaylistButton" class="button-style">Create Playlist</button>
+        <table id="trackTable">
+            <tr>
+                <th>Artwork</th>
+                <th>Artist</th>
+                <th>Song</th>
+                <th>Album</th>
+                <th>Key</th>
+                <input type="hidden" id="hiddenUri" value="your_uri_here">
+            </tr>
+        </table>
+        <!-- Rest of your content goes here -->
+    </div>
+
+    <style>
+        .main-area {
+            background-color: #333;
+            color: white;
+        }
+
+        #trackTable {
+            width: 98%;
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+        }
+
+        #trackTable th, #trackTable td {
+            border: 1px solid #ddd;
+            padding: 2px;
+        }
+
+        #trackTable tr:nth-child(even) {
+            background-color: #444;
+        }
+
+        #trackTable tr:nth-child(odd) {
+            background-color: #333;
+        }
+
+        #trackTable th {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            padding-right: 8px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .selected {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+
+    </style>
+
+    <script>
+        var selectedPlaylist;
+
+        function sortTable(n, table) {
+            var rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            switching = true;
+            dir = "asc"; 
+        
+            // Remove the sort direction indicator from all column headers
+            for (i = 0; i < table.rows[0].cells.length; i++) {
+                table.rows[0].cells[i].innerHTML = table.rows[0].cells[i].innerHTML.replace(" ↓", "").replace(" ↑", "");
+            }
+        
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+        
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+        
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+        
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount ++; 
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        
+            // Add the sort direction indicator to the sorted column header
+            if (dir == "asc") {
+                table.rows[0].cells[n].innerHTML += " ↓";
+            } else {
+                table.rows[0].cells[n].innerHTML += " ↑";
+            }
+        }
+        
+        // Add event listeners to table headers
+        window.onload = function() {
+            var table = document.getElementById('trackTable');
+            var headers = table.getElementsByTagName('th');
+        
+            for (var i = 0; i < headers.length; i++) {
+                (function(i) {
+                    headers[i].addEventListener('click', function() {
+                        sortTable(i, table);
+                    });
+                })(i);
+            }
+        };
+
+        document.getElementById('createPlaylistButton').addEventListener('click', function() {
+            
+            var playlistName = prompt("Please enter the name of the playlist");
+            if (playlistName == null || playlistName == "") {
+                alert("You must enter a name for the playlist");
+                return;
+            }
+        
+            var trackTable = document.getElementById('trackTable');
+            var tracks = [];
+        
+            // Start from 1 to skip the header row
+            for (var i = 1; i < trackTable.rows.length; i++) {
+                var row = trackTable.rows[i];
+                tracks.push({
+                    'Art': row.cells[0].firstChild.src,
+                    'Artists': row.cells[1].innerText,
+                    'Song': row.cells[2].innerText,
+                    'Album': row.cells[3].innerText,
+                    'Key': row.cells[4].innerText,
+                    'URI': row.cells[5].innerText // Get the URI from the hidden cell
+                });
+            }
+        
+            fetch('/create_playlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    access_token: "{{ session['access_token'] }}",
+                    playlist_name: playlistName,
+                    tracks: tracks
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the response from the server
+                // For example, you could display a success message or redirect to the playlist page
+            });
+        });
+
+        document.getElementById('selectPlaylistButton').addEventListener('click', function() {
+            {% if session['spotify_username'] and session['access_token'] %}
+                fetch('/get_user_playlists', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        access_token: "{{ session['access_token'] }}",
+                        id: "{{ session['spotify_username'] }}"
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var playlists = data.items;
+                    var playlistContainer = document.querySelector(".playlist-container");
+                    var confirmButton = document.querySelector(".confirm-button");
+                    var headerText = document.querySelector(".modal-header span");
+                    playlistContainer.innerHTML = '';  // Clear the playlist container
+                
+                    // Add each playlist to the container
+                    for (var i = 0; i < playlists.length; i++) {
+                        var playlist = playlists[i];
+                        var p = document.createElement("p");
+                        p.textContent = playlist.name;
+                        p.addEventListener("click", function() {
+                            // Remove 'selected' class from all playlists
+                            var playlistElements = document.querySelectorAll(".playlist-container p");
+                            playlistElements.forEach(function(element) {
+                                element.classList.remove("selected");
+                            });
+                
+                            // Add 'selected' class to clicked playlist
+                            this.classList.add("selected");
+                
+                            // Store the selected playlist
+                            selectedPlaylist = playlist;
+                
+                            // Show the confirm button
+                            confirmButton.style.display = "block";
+                        });
+                        playlistContainer.appendChild(p);
+                    }
+                
+                    // Change the header text and hide the modal when the confirm button is clicked
+                    confirmButton.addEventListener("click", function() {
+                        headerText.textContent = "Confirm";
+                        modal.style.display = "none";
+                
+                        // Generate the tracks
+                        if (selectedPlaylist) {
+                            // Rest of the code...
+                
+                            // Fetch the tracks and output them to a table
+                            fetch('/suggest_from_playlist', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    access_token: "{{ session['access_token'] }}",
+                                    playlist_id: selectedPlaylist.id,  // Assuming selectedPlaylist is an object with an id property
+                                    limit: 50  // Or whatever limit you want
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                // Clear the existing table, but leave the headers
+                                var trackTable = document.getElementById('trackTable');
+                                while (trackTable.rows.length > 1) {
+                                    trackTable.deleteRow(1);
+                                }
+                
+                                // Add the new track data to the table
+                                data.forEach(track => {
+                                    // Create a new row and cells for the track data
+                                    var row = document.createElement('tr');
+                                    var artCell = document.createElement('td');
+                                    var artistsCell = document.createElement('td');
+                                    var songCell = document.createElement('td');
+                                    var albumCell = document.createElement('td'); // New cell for album name
+                                    var keyCell = document.createElement('td');
+                                    var uriCell = document.createElement('td'); // New cell for URI
+                                
+                                    // Create an img element for the album artwork
+                                    var img = document.createElement('img');
+                                    img.src = track.Art;
+                                    img.alt = 'Album Artwork';
+                                    img.style.width = '50px';  // or any other size you want
+                                    img.style.height = '50px';  // or any other size you want
+                                
+                                    // Add the img element to the artCell
+                                    artCell.appendChild(img);
+                                
+                                    // Set the text for the other cells
+                                    artistsCell.innerText = track.Artists ? track.Artists : 'N/A';
+                                    songCell.innerText = track.Song ? track.Song : 'N/A';
+                                    albumCell.innerText = track.Album ? track.Album : 'N/A'; // Set the text for the album cell
+                                    keyCell.innerText = track.Key ? track.Key : 'N/A';
+                                    uriCell.innerText = track.URI ? track.URI : 'N/A'; // Set the text for the URI cell
+                                    uriCell.style.display = 'none'; // Hide the URI cell
+                                
+                                    // Add the cells to the row
+                                    row.appendChild(artCell);
+                                    row.appendChild(artistsCell);
+                                    row.appendChild(songCell);
+                                    row.appendChild(albumCell); // Add the album cell to the row
+                                    row.appendChild(keyCell);
+                                    row.appendChild(uriCell); // Add the URI cell to the row
+                                
+                                    // Add the row to the table
+                                    trackTable.appendChild(row);
+                                });
+                            });
+                        } else {
+                            alert("Please select a playlist first");
+                            return;
+                        }
+                    });
+                
+                    // Display the modal
+                    modal.style.display = "block";
+                }); 
+            {% else %}
+                window.location.href = "/login";
+            {% endif %}
+        });  
+
+        var modal = document.getElementById("myModal");
+        var btn = document.getElementById("selectPlaylistButton");
+        var span = document.getElementsByClassName("close")[0];
+
+        btn.onclick = function() 
+        {
+            modal.style.display = "block";
+        }
+
+        span.onclick = function() 
+        {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) 
+        {
+            if (event.target == modal) 
+            {
+                modal.style.display = "none";
+            }
+        }
+    </script> 
+{% endblock %}

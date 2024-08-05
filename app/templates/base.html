@@ -1,0 +1,119 @@
+<!--home.html corresponds to the app home page-->
+{% extends "bootstrap/base.html" %}
+
+<!--Navigation bar styling-->
+{% block styles %}
+{{ super() }}
+<style>
+    .navbar-custom 
+    {
+        background-color: #000;  /* Black background */
+        height: 80px;
+    }
+    .navbar-custom .navbar-brand, .navbar-custom 
+    {
+        color: #FFF;  /* White color text for nav items*/
+        font-size: 35px;
+        font-family: 'Montserrat', sans-serif;  /* Change font */
+        font-weight: bold;
+        padding-top: 15px;
+    }
+    .navbar-custom .navbar-brand button 
+    {
+        border: none;  /* Remove border */
+        background-image: none;  /* Remove background image */
+    }
+    .navbar-custom .nav-link /*for the links in the navbar */
+    {
+        color: #FFF;  /* White color text for nav items*/
+        font-size: 25px;
+        font-family: 'Montserrat', sans-serif;  /* Change font */
+        font-weight: bold;
+        padding: 0px 15px;
+    }
+    .navbar-custom .navbar-nav li /*how the links in the header are surrounded */
+    {
+        list-style: none;  /* Remove bullets */
+        padding-top: 15px;
+    }
+
+    .navbar-custom .navbar-collapse {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .navbar-login {
+        padding-top: 15px;
+        padding-right: 10px;
+    }
+    
+    /*Corresponds to hamburger menu in nav bar NOT CURRENTLY ACTIVE */
+    .navbar-toggler 
+    {
+        border: none;  /* Remove border */
+        background: transparent;  /* Make background transparent */
+        display: none;
+        position: absolute;  /* Position the button */
+        right: 0;  /* Move the button to the right */
+        top: 25px;
+    }
+
+    .navbar-toggler-icon 
+    {
+        background-image: none;  /* Remove default "hamburger" icon */
+    }
+
+    .navbar-toggler::before,
+    .navbar-toggler::after 
+    {
+        content: "";  /* Add content for pseudo-elements */
+        display: block;  /* Make pseudo-elements block-level */
+        width: 30px;  /* Set width of pseudo-elements */
+        height: 2px;  /* Set height of pseudo-elements */
+        background-color: #fff;  /* Set color of pseudo-elements */
+        margin: 2px 0;  /* Add margin to pseudo-elements */
+    }
+
+    .navbar-toggler-icon::before 
+    {
+        content: "";  /* Add content for pseudo-element */
+        display: block;  /* Make pseudo-element block-level */
+        width: 30px;  /* Set width of pseudo-elements */
+        height: 2px;  /* Set height of pseudo-elements */
+        background-color: #fff;  /* Set color of pseudo-elements */
+        margin: 6px 0;  /* Add margin to pseudo-elements */
+    }
+    
+</style>
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-custom bg-dark">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <div>
+                <a class="navbar-brand" href="/">Spotifynd</a>
+                <div class="navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="{{ url_for('discover') }}">Discover<span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="{{ url_for('library') }}">Library<span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="{{ url_for('playlist_suggest') }}">Suggest from Playlist<span class="sr-only">(current)</span></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="navbar-login" style="display: flex; align-items: center;">
+                {% if session['spotify_username'] %}
+                    <span style="font-size: 0.7em; margin-right: 10px;">Hello, {{ session['spotify_username'] }}</span>
+                    <img src="{{ session['spotify_profile_picture'] }}" alt="{{ session['spotify_username'] }}'s profile picture" style="width: 45px; height: 45px; border-radius: 50%; margin-bottom: 15px;">
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+{% endblock %}
