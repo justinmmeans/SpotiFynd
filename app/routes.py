@@ -37,10 +37,10 @@ def login():
     
     auth_url = "https://accounts.spotify.com/authorize"
 
-    # Ask for the necessary permissions - modify these as needed
-    scope = "user-library-read user-top-read playlist-modify-public"
+    #Scope of user permissions
+    scope = "user-library-read user-top-read playlist-modify-public playlist-read-private playlist-read-collaborative"
 
-    # Construct the URL to redirect the user to
+    #URL to redirect the user to
     auth_query_parameters = {
         "response_type": "code",
         "redirect_uri": REDIRECT_URI,
@@ -56,7 +56,7 @@ def login():
     
     return redirect(auth_url)
 
-# This is the route that Spotify will redirect to after the user logs in
+#This is the route that Spotify will redirect to after the user logs in
 @app.route('/callback')
 def callback():
     # Get the authorization code that Spotify returned
