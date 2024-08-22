@@ -101,8 +101,11 @@ def generate_tracks():
     if not access_token:
         return jsonify({'error': 'No access token provided'}), 400
 
-    # Call the function with the access token
-    tracks = generate_user_tracks(access_token)
+    # Get the selected items from the dropdown menu
+    selected_items = request.json.get('selected_items', [])
+
+    # Call the function with the access token and selected items
+    tracks = generate_user_tracks(access_token, selected_items)
 
     # Return the tracks as JSON
     return jsonify(tracks)

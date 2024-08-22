@@ -12,7 +12,7 @@ def generate_user_tracks(access_token, limit=50):
     saved_track_ids = set(track['track']['id'] for track in saved_tracks['items'])
 
     #Retrieve the user's top tracks up to 100 songs
-    top_tracks = spotify.current_user_top_tracks(time_range='medium_term', limit=min(limit, 50))
+    top_tracks = spotify.current_user_top_tracks(time_range='medium_term', limit=50)
 
     #Get the artist IDs from the top tracks
     artist_ids = [track['artists'][0]['id'] for track in top_tracks['items']]
@@ -35,10 +35,9 @@ def generate_user_tracks(access_token, limit=50):
     seeded_tracks = (list(saved_track_ids)[:1] + top_track_ids[:3])
 
     #Retrieve song recommendations based on track and genre seeds
-    song_recommendations = spotify.recommendations(seed_tracks=seeded_tracks, seed_genres=[most_common_genre], limit=limit)
+    song_recommendations = spotify.recommendations(seed_tracks=seeded_tracks, seed_genres=[most_common_genre], limit=50)
 
-    #Prepare the data for create_dataframe
-    # Prepare the data for output
+    #Prepare the data for output
     track_data = []
     recommended_track_ids = [track['id'] for track in song_recommendations['tracks'] if track['id'] not in saved_track_ids]
     # Get all features in one API call
@@ -53,14 +52,17 @@ def generate_user_tracks(access_token, limit=50):
             "Art": track["album"]["images"][0]["url"],
             "Artists": ", ".join(artist["name"] for artist in track["artists"]),
             "Song": track["name"],
-            "Album": track["album"]["name"],  # Add this line to retrieve the album name
-            "Key": pitch_names[track_audio_features['key']] if track_audio_features['key'] is not None else None,
-            "URI": track["uri"],  # Add this line to store the track URI
+            "Album": track["album"]["name"],  
+            #"Key": pitch_names[track_audio_features['key']] if track_audio_features['key'] is not None else None,
+            "URI": track["uri"], 
         }
         for audio_feature in track_audio_features:
-            if audio_feature not in ['type', 'id', 'track_href', 'analysis_url', 'key']:
-                track_info[audio_feature] = track_audio_features[audio_feature]
+            if audio_feature not in ['type', 'id', 'track_href', 'analysis_url']:
+                if audio_feature == 'key' and track_audio_features[audio_feature] is not None:
+                    track_info[audio_feature] = pitch_names[track_audio_features[audio_feature]]
+                else:
+                    track_info[audio_feature] = track_audio_features[audio_feature]
         track_data.append(track_info)
 
-    # Return the list of track data
+    #Return the list of track data
     return track_data
