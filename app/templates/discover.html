@@ -99,6 +99,61 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        #loadingMessage 
+        {
+            /* Box and alignment*/
+            border: 3px solid #333;
+            border-radius: 5px;
+            background-color: #4CAF50 !important; 
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            margin-bottom: 10px;
+            
+            /* Font and font alignment*/
+            color: white;
+            font-size: 2em;
+            padding: 8px; /* Adjust padding to reduce space around text */
+            padding-top: 0px; 
+            padding-bottom: 20px;
+            line-height: 1;
+        }
+        
+        /*For animated dots that appear after the Analyzing Library message when generate is clicked. */
+        #loadingMessage span 
+        {
+            animation-name: loadingDots;
+            animation-duration: 1.4s;
+            animation-iteration-count: infinite;
+            font-size: 2em;
+        }
+        
+        #loadingMessage span:nth-child(2) 
+        {
+            animation-delay: 0.2s;
+        }
+        
+        #loadingMessage span:nth-child(3) 
+        {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loadingDots 
+        {
+            0%, 20%, 80%, 100% 
+            {
+                opacity: 0;
+            }
+            50% 
+            {
+                opacity: 1;
+            }
+        }
+        
     </style>
     
     
@@ -167,7 +222,12 @@
                 <input type="submit" value="Save">
             </form>
             </div>
-        </div>   
+        </div> 
+        <!--Loading message appears once generate button is clicked. This is since loading the user saved songs takes a while the first time.-->
+        <div id="loadingMessage">
+            Analyzing Library<span>.</span><span>.</span><span>.</span>
+            <!-- You can use a gif for the loading animation -->
+        </div>  
         <table id="trackTable">
             <tr>
                 <!--Responsible for the headers on the table-->
@@ -191,6 +251,9 @@
         document.getElementById('generateButton').addEventListener('click', function() 
         {
             {% if session['spotify_username'] and session['access_token'] %}
+                //Show the loading message
+                document.getElementById('loadingMessage').style.display = 'block';
+
                 // Get the selected items from the dropdown menu
                 var dropdownMenu = document.getElementById('dropdownMenu');
                 if (!dropdownMenu) 
@@ -198,10 +261,10 @@
                     console.error('No element with ID "dropdownMenu"');
                     return;
                 }
-        
+
                 var selectedItems = Array.from(dropdownMenu.querySelectorAll('input[type=checkbox]:checked')).map(input => input.id);
                 console.log(selectedItems); 
-        
+
                 fetch('/generate_tracks', 
                 {
                     method: 'POST',
@@ -222,7 +285,7 @@
                     {
                         trackTable.deleteRow(1);
                     }
-        
+
                     //Add the new track data to the table
                     data.forEach(track => 
                     {
@@ -234,20 +297,20 @@
                         var albumCell = document.createElement('td'); // New cell for album name
                         //var keyCell = document.createElement('td');
                         var uriCell = document.createElement('td'); // New cell for URI
-        
+
                         //Create a new cell for each selected item
                         var selectedItemsCells = selectedItems.map(() => document.createElement('td'));
-        
+
                         //Create an img element for the album artwork
                         var img = document.createElement('img');
                         img.src = track.Art;
                         img.alt = 'Album Artwork';
                         img.style.width = '50px';  // or any other size you want
                         img.style.height = '50px';  // or any other size you want
-        
+
                         //Add the img element to the artCell
                         artCell.appendChild(img);
-        
+
                         //Set the text for the other cells
                         artistsCell.innerText = track.Artists ? track.Artists : 'N/A';
                         songCell.innerText = track.Song ? track.Song : 'N/A';
@@ -255,13 +318,13 @@
                         //keyCell.innerText = track.Key ? track.Key : 'N/A';
                         uriCell.innerText = track.URI ? track.URI : 'N/A'; // Set the text for the URI cell
                         uriCell.style.display = 'none'; // Hide the URI cell
-        
+
                         // Set the text for the selected items cells
                         selectedItemsCells.forEach((cell, index) => 
                         {
                             cell.innerText = track[selectedItems[index]] ? track[selectedItems[index]] : 'N/A';
                         });
-        
+
                         //Add the cells to the row
                         row.appendChild(artCell);
                         row.appendChild(artistsCell);
@@ -269,13 +332,16 @@
                         row.appendChild(albumCell); // Add the album cell to the row
                         //row.appendChild(keyCell);
                         row.appendChild(uriCell); // Add the URI cell to the row
-        
+
                         // Add the selected items cells to the row
                         selectedItemsCells.forEach(cell => row.appendChild(cell));
-        
+
                         // Add the row to the table
                         trackTable.appendChild(row);
                     });
+
+                    // Hide the loading message
+                    document.getElementById('loadingMessage').style.display = 'none';
                 });
             {% else %}
                 window.location.href = "{{ url_for('login') }}";
