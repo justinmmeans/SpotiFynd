@@ -3,7 +3,8 @@
 
 {% block content %}
     <style>
-        .button-style {
+        .button-style, dropdownButton 
+        {
             margin-top: 10px; /* Reduced from 20px to 10px */
             margin-bottom: 10px;
             margin-left: 20px; 
@@ -16,54 +17,80 @@
             cursor: pointer;
         }
 
-        #createPlaylistButton {
+        #createPlaylistButton 
+        {
             float: right;
             margin-right: 20px; /* Add some margin to the right side */
         }
-    </style>
-    <div class="main-area">
-        <button id="generateButton" class="button-style">Generate</button>
-        <button id="createPlaylistButton" class="button-style">Create Playlist</button>
-        <table id="trackTable">
-            <tr>
-                <th>Artwork</th>
-                <th>Artist</th>
-                <th>Song</th>
-                <th>Album</th>
-                <th>Key</th>
-                <input type="hidden" id="hiddenUri" value="your_uri_here">
-            </tr>
-        </table>
-        <!-- Rest of your content goes here -->
-    </div>
 
-    <style>
-        .main-area {
+        #dropdownMenu 
+        {
+            position: absolute;
+            top: 100%;  /* Position it below the button */
+            left: 0;  /* Align it with the left edge of the button */
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #333;  /* Dark grey background */
+            color: #fff;  /* White text for contrast */
+            z-index: 1;  /* Make it appear on top of other elements */
+            width: 200px;  /* Or whatever width you want */
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); /* Add a small outline around the dropdown */
+        }
+
+        input[type="submit"] 
+        {
+            background-color: #4CAF50; /* Green background */
+            color: white; /* White text */
+            border: none; /* Remove default border */
+            padding: 8px 16px; /* Add some padding */
+            text-align: center; /* Center the text */
+            text-decoration: none; /* Remove default text decoration */
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer; /* Change cursor to pointer when hovering over the button */
+            transition-duration: 0.4s; /* Add a transition effect */
+        }
+        
+        input[type="submit"]:hover 
+        {
+            background-color: #45a049; /* Darken the background color when hovering over the button */
+        }
+
+        .main-area 
+        {
             background-color: #333;
             color: white;
         }
 
-        #trackTable {
+        #trackTable 
+        {
             width: 98%;
             margin-left: auto;
             margin-right: auto;
             border-collapse: collapse;
         }
 
-        #trackTable th, #trackTable td {
+        #trackTable th, #trackTable td 
+        {
             border: 1px solid #ddd;
             padding: 2px;
         }
 
-        #trackTable tr:nth-child(even) {
+        #trackTable tr:nth-child(even) 
+        {
             background-color: #444;
         }
 
-        #trackTable tr:nth-child(odd) {
+        #trackTable tr:nth-child(odd) 
+        {
             background-color: #333;
         }
 
-        #trackTable th {
+        #trackTable th 
+        {
             padding-top: 8px;
             padding-bottom: 8px;
             padding-left: 8px;
@@ -72,99 +99,286 @@
             background-color: #4CAF50;
             color: white;
         }
-    </style>
 
+        #loadingMessage 
+        {
+            /* Box and alignment*/
+            border: 3px solid #333;
+            border-radius: 5px;
+            background-color: #4CAF50 !important; 
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            margin-bottom: 10px;
+            
+            /* Font and font alignment*/
+            color: white;
+            font-size: 2em;
+            padding: 8px; /* Adjust padding to reduce space around text */
+            padding-top: 0px; 
+            padding-bottom: 20px;
+            line-height: 1;
+        }
+        
+        /*For animated dots that appear after the Analyzing Library message when generate is clicked. */
+        #loadingMessage span 
+        {
+            animation-name: loadingDots;
+            animation-duration: 1.4s;
+            animation-iteration-count: infinite;
+            font-size: 2em;
+        }
+        
+        #loadingMessage span:nth-child(2) 
+        {
+            animation-delay: 0.2s;
+        }
+        
+        #loadingMessage span:nth-child(3) 
+        {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loadingDots 
+        {
+            0%, 20%, 80%, 100% 
+            {
+                opacity: 0;
+            }
+            50% 
+            {
+                opacity: 1;
+            }
+        }
+        
+    </style>
+    
+    
+    <!-- HTML -->
+    <div class="main-area">
+        <button id="generateButton" class="button-style">Suggest Songs</button>
+        <button id="createPlaylistButton" class="button-style">Create Playlist</button>
+        <div id="dropdownContainer" style="position: relative; display: inline-block;">
+            <!--Drop down menu with selectable song features-->
+            <button id="dropdownButton" class="button-style">Select Features</button>
+            <div id="dropdownMenu" style="display: none;">
+                <input type="checkbox" id="acousticness" name="acousticness">
+                <label for="acousticness">Acousticness</label><br>
+            
+                <input type="checkbox" id="analysis_url" name="analysis_url">
+                <label for="analysis_url">Analysis URL</label><br>
+            
+                <input type="checkbox" id="danceability" name="danceability">
+                <label for="danceability">Danceability</label><br>
+            
+                <input type="checkbox" id="duration_ms" name="duration_ms">
+                <label for="duration_ms">Duration (ms)</label><br>
+            
+                <input type="checkbox" id="energy" name="energy">
+                <label for="energy">Energy</label><br>
+            
+                <input type="checkbox" id="id" name="id">
+                <label for="id">ID</label><br>
+            
+                <input type="checkbox" id="instrumentalness" name="instrumentalness">
+                <label for="instrumentalness">Instrumentalness</label><br>
+            
+                <input type="checkbox" id="key" name="key">
+                <label for="key">Key</label><br>
+            
+                <input type="checkbox" id="liveness" name="liveness">
+                <label for="liveness">Liveness</label><br>
+            
+                <input type="checkbox" id="loudness" name="loudness">
+                <label for="loudness">Loudness</label><br>
+            
+                <input type="checkbox" id="mode" name="mode">
+                <label for="mode">Mode</label><br>
+            
+                <input type="checkbox" id="speechiness" name="speechiness">
+                <label for="speechiness">Speechiness</label><br>
+            
+                <input type="checkbox" id="tempo" name="tempo">
+                <label for="tempo">Tempo</label><br>
+            
+                <input type="checkbox" id="time_signature" name="time_signature">
+                <label for="time_signature">Time Signature</label><br>
+            
+                <input type="checkbox" id="track_href" name="track_href">
+                <label for="track_href">Track Href</label><br>
+            
+                <input type="checkbox" id="type" name="type">
+                <label for="type">Type</label><br>
+            
+                <input type="checkbox" id="uri" name="uri">
+                <label for="uri">URI</label><br>
+            
+                <input type="checkbox" id="valence" name="valence">
+                <label for="valence">Valence</label><br>
+            
+                <input type="submit" value="Save">
+            </form>
+            </div>
+        </div> 
+        <!--Loading message appears once generate button is clicked. This is since loading the user saved songs takes a while the first time.-->
+        <div id="loadingMessage">
+            Analyzing Library<span>.</span><span>.</span><span>.</span>
+            <!-- You can use a gif for the loading animation -->
+        </div>  
+        <table id="trackTable">
+            <tr>
+                <!--Responsible for the headers on the table-->
+                <th class="Artwork">Artwork</th>
+                <th class="Artist">Artist</th>
+                <th class="Song">Song</th>
+                <th class="Album">Album</th>
+                <!-- Selected items from the Select Features Drop down menu -->
+                {% for item in selected_items %}
+                    <th class="{{ item }}">{{ item }}</th>
+                {% endfor %}
+            </tr>
+        </table>
+        <input type="hidden" id="hiddenUri" value="your_uri_here">
+    </div>
+
+
+    <!---Scripts-->
     <script>
-        document.getElementById('generateButton').addEventListener('click', function() {
+        //Responsible for generating the suggestions and the table on the page
+        document.getElementById('generateButton').addEventListener('click', function() 
+        {
             {% if session['spotify_username'] and session['access_token'] %}
-                fetch('/generate_tracks', {
+                //Show the loading message
+                document.getElementById('loadingMessage').style.display = 'block';
+
+                // Get the selected items from the dropdown menu
+                var dropdownMenu = document.getElementById('dropdownMenu');
+                if (!dropdownMenu) 
+                {
+                    console.error('No element with ID "dropdownMenu"');
+                    return;
+                }
+
+                var selectedItems = Array.from(dropdownMenu.querySelectorAll('input[type=checkbox]:checked')).map(input => input.id);
+                console.log(selectedItems); 
+
+                fetch('/generate_tracks', 
+                {
                     method: 'POST',
-                    headers: {
+                    headers: 
+                    {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        access_token: "{{ session['access_token'] }}"
+                        access_token: "{{ session['access_token'] }}",
+                        selected_items: selectedItems
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // Clear the existing table, but leave the headers
+                    //Clear the existing table, but leave the headers
                     var trackTable = document.getElementById('trackTable');
-                    while (trackTable.rows.length > 1) {
+                    while (trackTable.rows.length > 1) 
+                    {
                         trackTable.deleteRow(1);
                     }
 
-                    // Add the new track data to the table
-                    data.forEach(track => {
-                        // Create a new row and cells for the track data
+                    //Add the new track data to the table
+                    data.forEach(track => 
+                    {
+                        //Create a new row and cells for the track data
                         var row = document.createElement('tr');
                         var artCell = document.createElement('td');
                         var artistsCell = document.createElement('td');
                         var songCell = document.createElement('td');
                         var albumCell = document.createElement('td'); // New cell for album name
-                        var keyCell = document.createElement('td');
+                        //var keyCell = document.createElement('td');
                         var uriCell = document.createElement('td'); // New cell for URI
-                    
-                        // Create an img element for the album artwork
+
+                        //Create a new cell for each selected item
+                        var selectedItemsCells = selectedItems.map(() => document.createElement('td'));
+
+                        //Create an img element for the album artwork
                         var img = document.createElement('img');
                         img.src = track.Art;
                         img.alt = 'Album Artwork';
                         img.style.width = '50px';  // or any other size you want
                         img.style.height = '50px';  // or any other size you want
-                    
-                        // Add the img element to the artCell
+
+                        //Add the img element to the artCell
                         artCell.appendChild(img);
-                    
-                        // Set the text for the other cells
+
+                        //Set the text for the other cells
                         artistsCell.innerText = track.Artists ? track.Artists : 'N/A';
                         songCell.innerText = track.Song ? track.Song : 'N/A';
                         albumCell.innerText = track.Album ? track.Album : 'N/A'; // Set the text for the album cell
-                        keyCell.innerText = track.Key ? track.Key : 'N/A';
+                        //keyCell.innerText = track.Key ? track.Key : 'N/A';
                         uriCell.innerText = track.URI ? track.URI : 'N/A'; // Set the text for the URI cell
                         uriCell.style.display = 'none'; // Hide the URI cell
-                    
-                        // Add the cells to the row
+
+                        // Set the text for the selected items cells
+                        selectedItemsCells.forEach((cell, index) => 
+                        {
+                            cell.innerText = track[selectedItems[index]] ? track[selectedItems[index]] : 'N/A';
+                        });
+
+                        //Add the cells to the row
                         row.appendChild(artCell);
                         row.appendChild(artistsCell);
                         row.appendChild(songCell);
                         row.appendChild(albumCell); // Add the album cell to the row
-                        row.appendChild(keyCell);
+                        //row.appendChild(keyCell);
                         row.appendChild(uriCell); // Add the URI cell to the row
-                    
+
+                        // Add the selected items cells to the row
+                        selectedItemsCells.forEach(cell => row.appendChild(cell));
+
                         // Add the row to the table
                         trackTable.appendChild(row);
                     });
+
+                    // Hide the loading message
+                    document.getElementById('loadingMessage').style.display = 'none';
                 });
             {% else %}
                 window.location.href = "{{ url_for('login') }}";
             {% endif %}
         });
 
+        //Function to sort the table by a specific column
         function sortTable(n, table) {
             var rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
             switching = true;
             dir = "asc"; 
         
-            // Remove the sort direction indicator from all column headers
-            for (i = 0; i < table.rows[0].cells.length; i++) {
+            //Remove the sort direction indicator from all column headers
+            for (i = 0; i < table.rows[0].cells.length; i++) 
+            {
                 table.rows[0].cells[i].innerHTML = table.rows[0].cells[i].innerHTML.replace(" ↓", "").replace(" ↑", "");
             }
         
-            while (switching) {
+            while (switching) 
+            {
                 switching = false;
                 rows = table.rows;
         
-                for (i = 1; i < (rows.length - 1); i++) {
+                for (i = 1; i < (rows.length - 1); i++) 
+                {
                     shouldSwitch = false;
                     x = rows[i].getElementsByTagName("TD")[n];
                     y = rows[i + 1].getElementsByTagName("TD")[n];
         
-                    if (dir == "asc") {
+                    if (dir == "asc") 
+                    {
                         if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
                         }
-                    } else if (dir == "desc") {
+                    } else if (dir == "desc") 
+                    {
                         if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
@@ -172,12 +386,14 @@
                     }
                 }
         
-                if (shouldSwitch) {
+                if (shouldSwitch) 
+                {
                     rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                     switching = true;
                     switchcount ++; 
                 } else {
-                    if (switchcount == 0 && dir == "asc") {
+                    if (switchcount == 0 && dir == "asc") 
+                    {
                         dir = "desc";
                         switching = true;
                     }
@@ -185,53 +401,64 @@
             }
         
             // Add the sort direction indicator to the sorted column header
-            if (dir == "asc") {
+            if (dir == "asc") 
+            {
                 table.rows[0].cells[n].innerHTML += " ↓";
-            } else {
+            } else 
+            {
                 table.rows[0].cells[n].innerHTML += " ↑";
             }
         }
         
         // Add event listeners to table headers
-        window.onload = function() {
+        window.onload = function() 
+        {
             var table = document.getElementById('trackTable');
             var headers = table.getElementsByTagName('th');
         
-            for (var i = 0; i < headers.length; i++) {
-                (function(i) {
-                    headers[i].addEventListener('click', function() {
+            for (var i = 0; i < headers.length; i++) 
+            {
+                (function(i) 
+                {
+                    headers[i].addEventListener('click', function() 
+                    {
                         sortTable(i, table);
                     });
                 })(i);
             }
         };
 
-        document.getElementById('createPlaylistButton').addEventListener('click', function() {
+        //For playlist creation
+        document.getElementById('createPlaylistButton').addEventListener('click', function() 
+        {
             var playlistName = prompt("Please enter the name of the playlist");
-            if (playlistName == null || playlistName == "") {
+            if (playlistName == null || playlistName == "") 
+            {
                 alert("You must enter a name for the playlist");
                 return;
             }
         
             var trackTable = document.getElementById('trackTable');
             var tracks = [];
-        
+
             // Start from 1 to skip the header row
-            for (var i = 1; i < trackTable.rows.length; i++) {
+            for (var i = 1; i < trackTable.rows.length; i++) 
+            {
                 var row = trackTable.rows[i];
                 tracks.push({
                     'Art': row.cells[0].firstChild.src,
                     'Artists': row.cells[1].innerText,
                     'Song': row.cells[2].innerText,
                     'Album': row.cells[3].innerText,
-                    'Key': row.cells[4].innerText,
-                    'URI': row.cells[5].innerText // Get the URI from the hidden cell
+                    //'Key': row.cells[4].innerText,
+                    'URI': row.cells[4].innerText // Get the URI from the hidden cell
                 });
             }
         
             fetch('/create_playlist', {
                 method: 'POST',
-                headers: {
+                headers: 
+                {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -245,6 +472,63 @@
                 // Handle the response from the server
                 // For example, you could display a success message or redirect to the playlist page
             });
+        });
+
+        //Drop down menu for selecting song features to display in table
+        document.getElementById('dropdownButton').addEventListener('click', function() 
+        {
+            var dropdownMenu = document.getElementById('dropdownMenu');
+            if (dropdownMenu.style.display === 'none') {
+                dropdownMenu.style.display = 'block';
+            } else 
+            {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+
+        //Checklist items within the drop down
+        document.getElementById('trackFeatures').addEventListener('change', function() 
+        {
+            // Get all the checkboxes in the form
+            var checkboxes = this.getElementsByTagName('input');
+        
+            // Get the values of the checked checkboxes
+            var selectedFeatures = [];
+            for (var i = 0; i < checkboxes.length; i++) 
+            {
+                if (checkboxes[i].checked) 
+                {
+                    selectedFeatures.push(checkboxes[i].name);
+                }
+            }
+        
+            // Get the track table
+            var trackTable = document.getElementById('trackTable');
+        
+            // Get all the cells in the table
+            var cells = trackTable.getElementsByTagName('td');
+        
+            // Define the features that should always be included
+            var alwaysIncluded = ['Artwork', 'Artist', 'Song', 'Album'];
+        
+            // Loop through the cells
+            for (var i = 0; i < cells.length; i++) 
+            {
+                // If a feature is selected and the cell's class matches one of the selected features, or the cell's class is in the alwaysIncluded array, show the cell
+                if ((selectedFeatures.length > 0 && selectedFeatures.some(feature => cells[i].classList.contains(feature))) || alwaysIncluded.some(feature => cells[i].classList.contains(feature))) {
+                    cells[i].style.display = 'table-cell';
+                } 
+                // If no feature is selected, show all cells
+                else if (selectedFeatures.length === 0) 
+                {
+                    cells[i].style.display = 'table-cell';
+                } 
+                // Otherwise, hide the cell
+                else 
+                {
+                    cells[i].style.display = 'none';
+                }
+            }
         });
     </script> 
 {% endblock %}

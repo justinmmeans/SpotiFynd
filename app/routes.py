@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, redirect, request, session, url_for, jsonify
+from flask import render_template, redirect, request, session, url_for, jsonify, send_from_directory, abort
 import requests
 import base64
 import urllib
@@ -101,8 +101,11 @@ def generate_tracks():
     if not access_token:
         return jsonify({'error': 'No access token provided'}), 400
 
-    # Call the function with the access token
-    tracks = generate_user_tracks(access_token)
+    # Get the selected items from the dropdown menu
+    selected_items = request.json.get('selected_items', [])
+
+    # Call the function with the access token and selected items
+    tracks = generate_user_tracks(access_token, selected_items)
 
     # Return the tracks as JSON
     return jsonify(tracks)
