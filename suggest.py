@@ -2,15 +2,15 @@ import collections
 import spotipy
 import json
 import os
+import numpy as np
 
 pitch_names = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
 
 def generate_user_tracks(access_token, limit=50):
     
     spotify = spotipy.Spotify(auth=access_token)
-    
-    #Retrieves the user's saved tracks from cache for quicker access
-    home_dir = os.path.expanduser("~")
+
+    #home_dir = os.path.expanduser("~")
 
     #Save json file to the cache file in project root.
     cache_file = os.path.join('cache', 'saved_tracks_cache.json')
@@ -27,17 +27,17 @@ def generate_user_tracks(access_token, limit=50):
         while results['next']:
             results = spotify.next(results)
             saved_tracks.extend(results['items'])
-        # Ensure the cache directory exists
+        #Check that cache directory exists
         os.makedirs(os.path.dirname(cache_file), exist_ok=True)
         with open(cache_file, 'w') as f:
             json.dump(saved_tracks, f)
 
     saved_track_ids = set(track['track']['id'] for track in saved_tracks)
 
-    #Retrieve the user's top tracks up to 100 songs
-    top_tracks = spotify.current_user_top_tracks(time_range='medium_term', limit=50)
+    #Retrieve the user's top tracks up to 50 songs
+    top_tracks = spotify.current_user_top_tracks(time_range='long_term', limit=50)
     top_track_ids = [track['id'] for track in top_tracks['items']]
-
+    
     #Get the artist IDs from the top tracks
     artist_ids = [track['artists'][0]['id'] for track in top_tracks['items']]
 
@@ -55,8 +55,6 @@ def generate_user_tracks(access_token, limit=50):
     #Combine seeds for song recommendations [:#] value corresponds to weight. These values + most_common_genre cannot exceed 5
     seeded_tracks = (list(saved_track_ids)[:1] + top_track_ids[:3])
 
-    # Retrieve song recommendations based on track and genre seeds
-    # Retrieve song recommendations based on track and genre seeds
     song_recommendations = spotify.recommendations(seed_tracks=seeded_tracks, seed_genres=[most_common_genre], limit=50)
 
     # Prepare the data for output
